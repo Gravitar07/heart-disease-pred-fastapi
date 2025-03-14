@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <h1>
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+        </h1>
+        <p class="dashboard-welcome">Welcome, {{ user.username }}! View your heart disease prediction history details here.</p>
+    </div>
+</div>
+
+{% if predictions %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Your Prediction History
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr class="text-white">
+                                <th>Date</th>
+                                <th>Result</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>Language</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prediction in predictions %}
+                            <tr>
+                                <td>{{ prediction.created_at.astimezone().strftime('%Y-%m-%d %H:%M') }} UTC</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if prediction.clinical_model_result else 'success' }}">
+                                        {{ 'Affected' if prediction.clinical_model_result else 'Not Affected' }}
+                                    </span>
+                                </td>
+                                <td>{{ prediction.clinical_features.get('age', 'N/A') }}</td>
+                                <td>
+                                    {% if prediction.clinical_features.get('gender') == 1 %}
+                                        Male
+                                    {% elif prediction.clinical_features.get('gender') == 0 %}
+                                        Female
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ prediction.language }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary view-details" 
+                                            data-id="{{ prediction.id }}"
+                                            data-clinical="{{ prediction.clinical_model_result|string|lower }}"
+                                            data-features="{{ prediction.clinical_features|tojson|replace('\"', '&quot;')|safe }}"
+                                            data-date="{{ prediction.created_at.astimezone().strftime('%Y-%m-%d %H:%M') }} UTC"
+                                            data-language="{{ prediction.language }}">
+                                        <i class="bi bi-eye me-1"></i>Details
+                                    </button>
+                                    
+                                    <button class="btn btn-sm btn-info view-report" 
+                                            data-report="{{ prediction.report }}">
+                                        <i class="bi bi-file-medical me-1"></i>Report
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body dashboard-card-body text-center py-5">
+                <i class="bi bi-clipboard-x no-predictions-icon"></i>
+                <h3 class="no-predictions-text">No predictions yet</h3>
+                <p class="no-predictions-subtitle">You haven't made any heart disease predictions yet.</p>
+                <a href="/home" class="btn btn-primary mt-2">
+                    <i class="bi bi-plus-circle me-2"></i>Make a Prediction
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-info-circle me-2"></i>Prediction Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-basic-info" class="mb-3"></div>
+                
+                <h5 class="text-light"><i class="bi bi-person-vcard me-2"></i>Patient Information</h5>
+                <div id="features-loading" class="text-center p-3 d-none">
+                    <div class="spinner-border text-light" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-light">Loading patient information...</p>
+                </div>
+                <table class="table table-bordered table-striped">
+                    <tbody id="details-table" class="text-white">
+                        <!-- Details will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-medical me-2"></i>Diagnostic Report
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card">
+                    <div class="card-body markdown-body">
+                        <div id="modal-markdown-report"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if user is authenticated
+    if (!Auth.isAuthenticated()) {
+        window.location.href = '/';
+        return;
+    }
+    
+    // Initialize Bootstrap modals
+    const detailsModalElement = document.getElementById('detailsModal');
+    const reportModalElement = document.getElementById('reportModal');
+    
+    // Ensure Bootstrap is available
+    if (typeof bootstrap !== 'undefined') {
+        const detailsModal = new bootstrap.Modal(detailsModalElement);
+        const reportModal = new bootstrap.Modal(reportModalElement);
+        
+        const basicInfoDiv = document.getElementById('modal-basic-info');
+        const detailsTable = document.getElementById('details-table');
+        const featuresLoading = document.getElementById('features-loading');
+        
+        // Feature display names for better readability
+        const featureDisplayNames = {
+            age: 'Age',
+            gender: 'Gender',
+            chest_pain: 'Chest Pain Type',
+            bp: 'Blood Pressure',
+            cholesterol: 'Cholesterol',
+            blood_sugar: 'Fasting Blood Sugar > 120 mg/dl',
+            electrocardiographic: 'Electrocardiographic Results',
+            heart_rate: 'Maximum Heart Rate',
+            exercise_angina: 'Exercise Induced Angina',
+            oldpeak: 'ST Depression (Oldpeak)',
+            slope: 'Slope of Peak Exercise ST Segment'
+        };
+        
+        // Value mapping for categorical features
+        const genderMap = ['Female', 'Male'];
+        const chestPainMap = ['Typical Angina', 'Atypical Angina', 'Non-anginal Pain', 'Asymptomatic'];
+        const booleanMap = ['No', 'Yes'];
+        const ecgMap = ['Normal', 'ST-T Wave Abnormality', 'Left Ventricular Hypertrophy'];
+        const slopeMap = ['Upsloping', 'Flat', 'Downsloping'];
+        
+        // View details button click handler
+        document.querySelectorAll('.view-details').forEach(button => {
+            button.addEventListener('click', function() {
+                try {
+                    // Get data from button attributes
+                    const clinicalStr = this.getAttribute('data-clinical');
+                    const clinical = clinicalStr === 'true'; // Convert string to boolean
+                    
+                    const date = this.getAttribute('data-date');
+                    const language = this.getAttribute('data-language');
+                    
+                    // Display basic information
+                    basicInfoDiv.innerHTML = `
+                        <div class="alert alert-${clinical ? 'danger' : 'success'}">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong><i class="bi bi-calendar3 me-1"></i>Date:</strong> ${date}</p>
+                                    <p><strong><i class="bi bi-heart-pulse me-1"></i>Result:</strong> ${clinical ? 'Heart Disease Detected' : 'No Heart Disease Detected'}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong><i class="bi bi-translate me-1"></i>Language:</strong> ${language}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Clear previous details and show loading indicator
+                    detailsTable.innerHTML = '';
+                    featuresLoading.classList.remove('d-none');
+                    
+                    // Extract features from data attribute
+                    const featuresStr = this.getAttribute('data-features') || '{}';
+                    
+                    try {
+                        // Debug the raw string
+                        console.log('Raw features string:', featuresStr);
+                        
+                        // Decode HTML entities if needed
+                        const decodedStr = featuresStr.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+                        console.log('Decoded features string:', decodedStr);
+                        
+                        // Parse features JSON
+                        let features;
+                        if (decodedStr && decodedStr.trim()) {
+                            features = JSON.parse(decodedStr);
+                        } else {
+                            features = {};
+                        }
+                        
+                        displayFeatures(features);
+                    } catch (jsonError) {
+                        console.error('Error parsing features JSON:', jsonError);
+                        console.error('Features string was:', featuresStr);
+                        featuresLoading.classList.add('d-none');
+                        detailsTable.innerHTML = '<tr><td colspan="2" class="text-center text-danger">Error loading patient data. Please try again or contact support.</td></tr>';
+                    }
+                    
+                    // Show the modal
+                    detailsModal.show();
+                    
+                } catch (error) {
+                    console.error('Error in view-details click handler:', error);
+                    alert('There was an error displaying the details. Please check the console for more information.');
+                }
+            });
+        });
+        
+        // Function to display features in the table
+        function displayFeatures(features) {
+            // Hide loading indicator
+            featuresLoading.classList.add('d-none');
+            
+            // Clear table first
+            detailsTable.innerHTML = '';
+            
+            // Check if features is undefined or empty
+            if (!features || Object.keys(features).length === 0) {
+                detailsTable.innerHTML = '<tr><td colspan="2" class="text-center text-light">No detailed patient information available</td></tr>';
+                return;
+            }
+            
+            // Add rows to table for each feature
+            for (const [key, value] of Object.entries(features)) {
+                // Skip empty values
+                if (value === null || value === undefined || value === '') continue;
+                
+                let row = detailsTable.insertRow();
+                
+                // Add feature name
+                let cell1 = row.insertCell(0);
+                cell1.className = 'text-light fw-bold';
+                cell1.innerHTML = `${featureDisplayNames[key] || key}`;
+                
+                // Add feature value with appropriate mapping
+                let cell2 = row.insertCell(1);
+                cell2.className = 'text-light';
+                let displayValue = value;
+                
+                try {
+                    // Map values for better readability
+                    if (key === 'gender') {
+                        displayValue = genderMap[parseInt(value)] || value;
+                    } else if (key === 'chest_pain') {
+                        displayValue = chestPainMap[parseInt(value)] || value;
+                    } else if (key === 'blood_sugar' || key === 'exercise_angina') {
+                        displayValue = booleanMap[parseInt(value)] || value;
+                    } else if (key === 'electrocardiographic') {
+                        displayValue = ecgMap[parseInt(value)] || value;
+                    } else if (key === 'slope') {
+                        displayValue = slopeMap[parseInt(value)] || value;
+                    }
+                } catch (error) {
+                    console.error(`Error mapping value for ${key}:`, error);
+                    // Use the raw value if mapping fails
+                }
+                
+                cell2.textContent = displayValue;
+            }
+        }
+        
+        // View report modal
+        document.querySelectorAll('.view-report').forEach(button => {
+            button.addEventListener('click', function() {
+                try {
+                    const report = this.getAttribute('data-report');
+                    
+                    // Convert report to markdown and render
+                    const markdown = convertToMarkdown(report);
+                    const markdownReportDiv = document.getElementById('modal-markdown-report');
+                    markdownReportDiv.innerHTML = marked.parse(markdown);
+                    
+                    reportModal.show();
+                } catch (error) {
+                    console.error('Error showing report modal:', error);
+                    alert('There was an error displaying the report.');
+                }
+            });
+        });
+    } else {
+        console.error('Bootstrap is not available - modals will not work');
+        alert('There was an error loading the UI components. Please refresh the page and try again.');
+    }
+});
+</script>
+{% endblock %}

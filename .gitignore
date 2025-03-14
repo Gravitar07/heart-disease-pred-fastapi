@@ -1,0 +1,17 @@
+venv/
+
+logs/
+
+*.log
+
+*.log.*
+
+.env
+
+__pycache__/
+
+*.pyc
+
+*.pyo
+
+

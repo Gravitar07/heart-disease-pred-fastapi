@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <h1 class="text-center">
+            <i class="bi bi-heart-pulse me-2"></i>Heart Disease Prediction
+        </h1>
+        <p class="text-center dashboard-welcome">Enter patient data to get a heart disease risk assessment</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-clipboard-pulse me-2"></i>Prediction Form
+                </h3>
+            </div>
+            <div class="card-body">
+                <form id="prediction-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="age" class="form-label"><strong>Age</strong></label>
+                                <input type="number" class="form-control" id="age" name="age" min="1" max="120" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="gender" class="form-label"><strong>Gender</strong></label>
+                                <select class="form-select" id="gender" name="gender" required>
+                                    <option value="" selected disabled>Select gender</option>
+                                    <option value="0">Female</option>
+                                    <option value="1">Male</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="chest_pain" class="form-label"><strong>Chest Pain Type</strong></label>
+                                <select class="form-select" id="chest_pain" name="chest_pain" required>
+                                    <option value="" selected disabled>Select chest pain type</option>
+                                    <option value="0">Typical Angina</option>
+                                    <option value="1">Atypical Angina</option>
+                                    <option value="2">Non-anginal Pain</option>
+                                    <option value="3">Asymptomatic</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="bp" class="form-label"><strong>Resting Blood Pressure</strong> (mm Hg)</label>
+                                <input type="number" class="form-control" id="bp" name="bp" min="80" max="220" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="cholesterol" class="form-label"><strong>Serum Cholesterol</strong> (mg/dl)</label>
+                                <input type="number" class="form-control" id="cholesterol" name="cholesterol" min="100" max="600" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="blood_sugar" class="form-label"><strong>Fasting Blood Sugar > 120 mg/dl</strong></label>
+                                <select class="form-select" id="blood_sugar" name="blood_sugar" required>
+                                    <option value="" selected disabled>Select option</option>
+                                    <option value="0">No</option>
+                                    <option value="1">Yes</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="electrocardiographic" class="form-label"><strong>Electrocardiographic Results</strong></label>
+                                <select class="form-select" id="electrocardiographic" name="electrocardiographic" required>
+                                    <option value="" selected disabled>Select ECG results</option>
+                                    <option value="0">Normal</option>
+                                    <option value="1">ST-T Wave Abnormality</option>
+                                    <option value="2">Left Ventricular Hypertrophy</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="heart_rate" class="form-label"><strong>Maximum Heart Rate</strong></label>
+                                <input type="number" class="form-control" id="heart_rate" name="heart_rate" min="60" max="220" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="exercise_angina" class="form-label"><strong>Exercise Induced Angina</strong></label>
+                                <select class="form-select" id="exercise_angina" name="exercise_angina" required>
+                                    <option value="" selected disabled>Select option</option>
+                                    <option value="0">No</option>
+                                    <option value="1">Yes</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="oldpeak" class="form-label"><strong>ST Depression</strong> (Oldpeak)</label>
+                                <input type="number" step="0.1" class="form-control" id="oldpeak" name="oldpeak" min="0" max="10" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="slope" class="form-label"><strong>Slope of Peak Exercise ST Segment</strong></label>
+                                <select class="form-select" id="slope" name="slope" required>
+                                    <option value="" selected disabled>Select slope</option>
+                                    <option value="0">Upsloping</option>
+                                    <option value="1">Flat</option>
+                                    <option value="2">Downsloping</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="language" class="form-label"><strong>Report Language</strong></label>
+                                <select class="form-select form-select-lg" id="language" name="language">
+                                    <option value="English">English</option>
+                                    
+                                    <!-- North Indian Languages -->
+                                    <optgroup label="North Indian Languages">
+                                        <option value="Hindi">Hindi</option>
+                                        <option value="Punjabi">Punjabi</option>
+                                        <option value="Urdu">Urdu</option>
+                                        <option value="Bengali">Bengali</option>
+                                    </optgroup>
+                                    
+                                    <!-- South Indian Languages -->
+                                    <optgroup label="South Indian Languages">
+                                        <option value="Tamil">Tamil</option>
+                                        <option value="Telugu">Telugu</option>
+                                        <option value="Malayalam">Malayalam</option>
+                                        <option value="Kannada">Kannada</option>
+                                    </optgroup>
+                                    
+                                    <!-- International Languages -->
+                                    <optgroup label="International Languages">
+                                        <option value="Spanish">Spanish</option>
+                                        <option value="French">French</option>
+                                        <option value="German">German</option>
+                                        <option value="Arabic">Arabic</option>
+                                    </optgroup>
+                                </select>
+                                <div class="form-text">Select the language for your diagnostic report</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-heart-pulse me-2"></i>Predict Heart Disease Risk
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Section (initially hidden) -->
+<div id="results-section" class="row mt-4 d-none">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-file-medical me-2"></i>Diagnostic Report
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <!-- Basic info section -->
+                        <div id="basic-info" class="mb-4"></div>
+                        
+                        <!-- Diagnostic report section -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="mb-0">Detailed Report</h4>
+                            </div>
+                            <div class="card-body markdown-body">
+                                <div id="markdown-report"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Document ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Heart Disease Prediction page loaded successfully');
+    
+    // Check if user is authenticated
+    if (!Auth.isAuthenticated()) {
+        window.location.href = '/';
+        return;
+    }
+});
+
+// Form submission
+document.getElementById('prediction-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const formData = new FormData();
+    
+    // Add clinical data as JSON
+    const clinicalData = {
+        age: parseInt(form.age.value),
+        gender: parseInt(form.gender.value),
+        chest_pain: parseInt(form.chest_pain.value),
+        bp: parseInt(form.bp.value),
+        cholesterol: parseInt(form.cholesterol.value),
+        blood_sugar: parseInt(form.blood_sugar.value),
+        electrocardiographic: parseInt(form.electrocardiographic.value),
+        heart_rate: parseInt(form.heart_rate.value),
+        exercise_angina: parseInt(form.exercise_angina.value),
+        oldpeak: parseFloat(form.oldpeak.value),
+        slope: parseInt(form.slope.value)
+    };
+    
+    formData.append('clinical_data', JSON.stringify(clinicalData));
+    formData.append('language', form.language.value);
+    
+    // Show loading state
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+    
+    try {
+        const response = await fetch('/api/predict', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${Auth.getToken()}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Display results
+            const resultsSection = document.getElementById('results-section');
+            const basicInfoDiv = document.getElementById('basic-info');
+            const markdownReportDiv = document.getElementById('markdown-report');
+            
+            resultsSection.classList.remove('d-none');
+            
+            // Display basic information
+            basicInfoDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Clinical Analysis:</strong> <span class="badge ${data.clinical_result ? 'bg-danger' : 'bg-success'}">${data.clinical_result ? 'Heart Disease Detected' : 'No Heart Disease Detected'}</span></p>
+                            <p><strong>Patient Age:</strong> ${clinicalData.age}</p>
+                            <p><strong>Gender:</strong> ${clinicalData.gender === 1 ? 'Male' : 'Female'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Prediction Date:</strong> ${new Date().toLocaleString()}</p>
+                            <p><strong>Blood Pressure:</strong> ${clinicalData.bp} mm Hg</p>
+                            <p><strong>Language:</strong> ${data.language}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Convert report to markdown and render
+            const markdown = convertToMarkdown(data.report);
+            markdownReportDiv.innerHTML = marked.parse(markdown);
+            
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            alert(data.detail || 'An error occurred during prediction.');
+        }
+    } catch (error) {
+        console.error('Prediction error:', error);
+        alert('An error occurred. Please try again.');
+    } finally {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    }
+});
+</script>
+{% endblock %}

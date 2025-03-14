@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block navbar_brand_class %}navbar-brand-center{% endblock %}
+
+{% block navbar_class %}auth-navbar{% endblock %}
+
+{% block nav_items %}
+<!-- Empty nav items for login page -->
+{% endblock %}
+
+{% block content %} 
+<div class="auth-container">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-person-lock me-2"></i>Login
+                </h3>
+            </div>
+            <div class="card-body">
+                <div id="error-message" class="alert alert-danger d-none"></div>
+                <div id="success-message" class="alert alert-success d-none">Login successful! Redirecting...</div>
+                
+                <!-- Success message for redirect from signup has been removed -->
+                
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="bi bi-person me-2"></i>Username
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            <i class="bi bi-key me-2"></i>Password
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                    </button>
+                </form>
+                <div class="mt-3">
+                    <p>Don't have an account? <a href="/signup" class="text-info">Sign up</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorMessage = document.getElementById('error-message');
+    const successMessage = document.getElementById('success-message');
+    
+    // Clear previous messages
+    errorMessage.classList.add('d-none');
+    successMessage.classList.add('d-none');
+    
+    // Show loading state
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Logging in...';
+    
+    try {
+        const response = await fetch('/api/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'username': username,
+                'password': password
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Show success message
+            successMessage.classList.remove('d-none');
+            
+            // Store token using Auth object
+            Auth.setToken(data.access_token);
+            
+            // Redirect to home page after a short delay
+            setTimeout(() => {
+                window.location.href = '/home';
+            }, 1000);
+        } else {
+            errorMessage.textContent = data.detail || 'Login failed. Please check your credentials.';
+            errorMessage.classList.remove('d-none');
+            
+            // Reset button
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalText;
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.classList.remove('d-none');
+        
+        // Reset button
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+    }
+});
+
+// Check if we already have a token and redirect if so
+document.addEventListener('DOMContentLoaded', function() {
+    if (Auth.isAuthenticated()) {
+        // Only redirect if we're on the login page
+        if (window.location.pathname === '/' || window.location.pathname === '/login') {
+            window.location.href = '/home';
+        }
+    }
+});
+</script>
+{% endblock %} 
