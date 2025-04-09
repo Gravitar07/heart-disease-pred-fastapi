@@ -3,7 +3,7 @@ fastapi
 google-generativeai
 jinja2
 joblib
-numpy==1.24.4
+numpy
 passlib
 pydantic
 python-dotenv
